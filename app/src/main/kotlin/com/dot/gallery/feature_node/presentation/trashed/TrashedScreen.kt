@@ -1,0 +1,78 @@
+/*
+ * SPDX-FileCopyrightText: 2023 IacobIacob01
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+package com.ajstudioz.gallery.feature_node.presentation.trashed
+
+import android.app.Activity
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.IntentSenderRequest
+import androidx.compose.animation.AnimatedContentScope
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.State
+import androidx.compose.ui.res.stringResource
+import com.ajstudioz.gallery.R
+import com.ajstudioz.gallery.core.Constants.Target.TARGET_TRASH
+import com.ajstudioz.gallery.feature_node.domain.model.AlbumState
+import com.ajstudioz.gallery.feature_node.domain.model.Media
+import com.ajstudioz.gallery.feature_node.domain.model.MediaMetadataState
+import com.ajstudioz.gallery.feature_node.domain.model.MediaState
+import com.ajstudioz.gallery.feature_node.domain.use_case.MediaHandleUseCase
+import com.ajstudioz.gallery.feature_node.presentation.common.MediaScreen
+import com.ajstudioz.gallery.feature_node.presentation.trashed.components.AutoDeleteFooter
+import com.ajstudioz.gallery.feature_node.presentation.trashed.components.EmptyTrash
+import com.ajstudioz.gallery.feature_node.presentation.trashed.components.TrashedNavActions
+import com.ajstudioz.gallery.feature_node.presentation.util.clear
+
+@OptIn(ExperimentalSharedTransitionApi::class)
+@Composable
+inline fun <reified T: Media> TrashedGridScreen(
+    paddingValues: PaddingValues,
+    albumName: String = stringResource(id = R.string.trash),
+    handler: MediaHandleUseCase,
+    mediaState: State<MediaState<T>>,
+    metadataState: State<MediaMetadataState>,
+    albumsState: State<AlbumState>,
+    selectionState: MutableState<Boolean>,
+    selectedMedia: MutableState<Set<Long>>,
+    noinline toggleSelection: (Int) -> Unit,
+    noinline navigate: (route: String) -> Unit,
+    noinline navigateUp: () -> Unit,
+    noinline toggleNavbar: (Boolean) -> Unit,
+    sharedTransitionScope: SharedTransitionScope,
+    animatedContentScope: AnimatedContentScope,
+) = MediaScreen(
+    paddingValues = paddingValues,
+    target = TARGET_TRASH,
+    albumName = albumName,
+    handler = handler,
+    albumsState = albumsState,
+    mediaState = mediaState,
+    metadataState = metadataState,
+    selectionState = selectionState,
+    selectedMedia = selectedMedia,
+    toggleSelection = toggleSelection,
+    allowHeaders = false,
+    enableStickyHeaders = false,
+    navActionsContent = { _: MutableState<Boolean>,
+                          _: ActivityResultLauncher<IntentSenderRequest> ->
+        TrashedNavActions(handler, mediaState, selectedMedia, selectionState)
+    },
+    emptyContent = { EmptyTrash() },
+    aboveGridContent = { AutoDeleteFooter() },
+    navigate = navigate,
+    navigateUp = navigateUp,
+    toggleNavbar = toggleNavbar,
+    sharedTransitionScope = sharedTransitionScope,
+    animatedContentScope = animatedContentScope
+) { result ->
+    if (result.resultCode == Activity.RESULT_OK) {
+        selectedMedia.clear()
+        selectionState.value = false
+    }
+}
